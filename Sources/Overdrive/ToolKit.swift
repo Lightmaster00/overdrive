@@ -70,6 +70,9 @@ final class Tool: Identifiable {
     var permissions: [Permission] = []
     var defaultOn = false
     var beta = false
+    /// A setting macOS keeps by itself (Dock, screenshots…): left as is when Overdrive quits,
+    /// and only applied again at launch if it changed.
+    var persistent = false
     var options: [ToolOption] = []
     var perform: (@MainActor () -> Void)?
     var start: (@MainActor () -> Void)?
@@ -137,8 +140,9 @@ final class ToolManager: ObservableObject {
         registerShortcuts()
     }
 
+    /// When Overdrive quits: undo what only works while it runs (Hyper key…), keep system settings.
     func stopAll() {
-        for tool in tools where running.contains(tool.id) { stopTweak(tool) }
+        for tool in tools where running.contains(tool.id) && !tool.persistent { stopTweak(tool) }
     }
 
     /// After an option changed: apply it by restarting the tweak.

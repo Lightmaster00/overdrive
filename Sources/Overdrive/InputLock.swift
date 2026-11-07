@@ -9,6 +9,9 @@ enum InputLock {
     private static var windows: [NSWindow] = []
     private static var escapeSince: Date?
     private static var exitTimer: Timer?
+    private static var startedAt = Date()
+    /// Safety net: the lock never lasts more than this.
+    private static let maximumDuration: TimeInterval = 15 * 60
     private static let model = LockModel()
 
     static var isActive: Bool { !windows.isEmpty }
@@ -18,6 +21,7 @@ enum InputLock {
         guard AXIsProcessTrusted() else { return Permission.accessibility.request() }
         model.cleaning = cleaning
         model.progress = 0
+        startedAt = Date()
         for screen in NSScreen.screens {
             let window = NSWindow(contentRect: screen.frame, styleMask: .borderless, backing: .buffered, defer: false)
             window.level = .screenSaver
@@ -41,6 +45,9 @@ enum InputLock {
         }
         exitTimer = Timer.scheduledTimer(withTimeInterval: 0.05, repeats: true) { _ in
             MainActor.assumeIsolated {
+                if Date().timeIntervalSince(startedAt) > maximumDuration { return stop() }
+                // If the event tap stopped (permission removed), the input is no longer locked.
+                if !EventTap.shared.isRunning { return stop() }
                 guard let since = escapeSince else { return }
                 let held = Date().timeIntervalSince(since)
                 model.progress = min(held / 2, 1)

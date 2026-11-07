@@ -185,6 +185,8 @@ final class RegionSelector {
     private var windows: [NSWindow] = []
     private let completion: (Selection?) -> Void
     private var keyMonitor: Any?
+    /// The app that was in front, given the focus back afterwards.
+    private let previousApp = NSWorkspace.shared.frontmostApplication
 
     static func select(_ completion: @escaping (Selection?) -> Void) {
         current?.finish(nil)
@@ -238,6 +240,7 @@ final class RegionSelector {
         keyMonitor = nil
         for window in windows { window.orderOut(nil) }
         windows = []
+        if let previousApp, previousApp.bundleIdentifier != Apps.me { previousApp.activate() }
         // Let the overlay disappear before the screen is captured.
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) { [completion] in
             MainActor.assumeIsolated { completion(selection) }

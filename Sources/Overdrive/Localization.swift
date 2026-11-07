@@ -116,6 +116,7 @@ enum S {
     // MARK: Feedback
     static func itemsCut(_ n: Int) -> String { tr("\(n) item(s) cut — ⌘V to move", "\(n) élément(s) coupé(s) — ⌘V pour déplacer", "\(n) elemento(s) cortado(s) — ⌘V para mover", "\(n) Objekt(e) ausgeschnitten — ⌘V", "\(n) 項目をカット — ⌘V で移動") }
     static var untitledFileName: String { tr("untitled.txt", "sans titre.txt", "sin título.txt", "unbenannt.txt", "名称未設定.txt") }
+    static var cannotPasteHere: String { tr("Can't move files to this window", "Impossible de déplacer les fichiers ici", "No se pueden mover los archivos aquí", "Hierhin kann nicht verschoben werden", "ここには移動できません") }
     static var hiddenFilesShown: String { tr("Hidden files shown", "Fichiers cachés affichés", "Archivos ocultos visibles", "Versteckte Dateien sichtbar", "不可視ファイルを表示") }
     static var hiddenFilesHidden: String { tr("Hidden files hidden", "Fichiers cachés masqués", "Archivos ocultos ocultos", "Versteckte Dateien ausgeblendet", "不可視ファイルを非表示") }
     static var nothingSelected: String { tr("Nothing selected in Finder", "Rien n'est sélectionné dans le Finder", "No hay nada seleccionado", "Nichts im Finder ausgewählt", "Finder で何も選択されていません") }

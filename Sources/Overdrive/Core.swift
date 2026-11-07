@@ -222,6 +222,15 @@ enum AX {
         return editable == true
     }
 
+    /// Whether the keyboard focus is on Finder's file list (icon, list, column or gallery view),
+    /// and not on a button, a sheet or a text field.
+    static func isBrowsingFiles() -> Bool {
+        AXUIElementSetMessagingTimeout(system, 0.15)
+        guard let focused: AXUIElement = attribute(system, kAXFocusedUIElementAttribute) else { return false }
+        if isEditingText() { return false }
+        return ["AXOutline", "AXList", "AXBrowser", "AXTable", "AXGroup", "AXScrollArea"].contains(role(focused) ?? "")
+    }
+
     static func element(at point: CGPoint) -> AXUIElement? {
         var element: AXUIElement?
         AXUIElementSetMessagingTimeout(system, 0.15)

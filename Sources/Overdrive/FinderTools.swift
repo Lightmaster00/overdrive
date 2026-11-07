@@ -24,12 +24,15 @@ enum FinderTools {
     }
 
     /// Folder shown in the front Finder window (the Desktop when there is none).
+    /// nil when the front window isn't a folder (search results, Recents…): nothing is done then.
     nonisolated static func currentFolder() -> String? {
         let r = Shell.appleScript("""
         tell application "Finder"
             if (count of Finder windows) > 0 then
                 try
                     return POSIX path of (target of front Finder window as alias)
+                on error
+                    return ""
                 end try
             end if
             return POSIX path of (desktop as alias)
@@ -77,7 +80,7 @@ enum FinderTools {
             guard type == .keyDown, finderIsFront, event.modifiers == .maskCommand, !event.isAutoRepeat else { return .pass }
             switch event.keyCode {
             case kVK_ANSI_X:
-                guard !AX.isEditingText() else { return .pass }
+                guard AX.isBrowsingFiles() else { return .pass }
                 DispatchQueue.global(qos: .userInitiated).async {
                     let paths = selection()
                     DispatchQueue.main.async {
@@ -93,11 +96,14 @@ enum FinderTools {
                 cutPaths = [] // a new copy cancels the cut
                 return .pass
             case kVK_ANSI_V:
-                guard !cutPaths.isEmpty, !AX.isEditingText() else { return .pass }
+                guard !cutPaths.isEmpty, AX.isBrowsingFiles() else { return .pass }
                 let paths = cutPaths
                 cutPaths = []
                 DispatchQueue.global(qos: .userInitiated).async {
-                    guard let folder = currentFolder() else { return }
+                    guard let folder = currentFolder() else {
+                        DispatchQueue.main.async { MainActor.assumeIsolated { feedback("xmark.circle", S.cannotPasteHere) } }
+                        return
+                    }
                     let moved = move(paths, to: URL(fileURLWithPath: folder))
                     reveal(moved)
                 }
@@ -141,11 +147,11 @@ enum FinderTools {
             let mods = event.modifiers
             switch event.keyCode {
             case kVK_Return where mods.isEmpty:
-                guard !AX.isEditingText() else { return .pass }
+                guard AX.isBrowsingFiles() else { return .pass }
                 if let finder = Apps.frontmost { EventTap.postKey(kVK_DownArrow, flags: .maskCommand, to: finder.processIdentifier) }
                 return .consume
             case kVK_Return where mods == .maskShift, kVK_F2 where mods.isEmpty:
-                guard !AX.isEditingText() else { return .pass }
+                guard AX.isBrowsingFiles() else { return .pass }
                 if let finder = Apps.frontmost { EventTap.postKey(kVK_Return, to: finder.processIdentifier) }
                 return .consume
             default:
@@ -159,7 +165,7 @@ enum FinderTools {
     static func startDeleteToTrash() {
         EventTap.shared.add("finder.deleteToTrash") { type, event in
             guard type == .keyDown, finderIsFront, event.keyCode == kVK_Delete || event.keyCode == kVK_ForwardDelete,
-                  event.modifiers.isEmpty, !AX.isEditingText() else { return .pass }
+                  event.modifiers.isEmpty, AX.isBrowsingFiles() else { return .pass }
             if let finder = Apps.frontmost { EventTap.postKey(kVK_Delete, flags: .maskCommand, to: finder.processIdentifier) }
             return .consume
         }
@@ -170,7 +176,7 @@ enum FinderTools {
     static func startNewFileShortcut() {
         EventTap.shared.add("finder.newTextFile") { type, event in
             guard type == .keyDown, finderIsFront, event.keyCode == kVK_ANSI_N, event.modifiers == .maskAlternate,
-                  !AX.isEditingText() else { return .pass }
+                  AX.isBrowsingFiles() else { return .pass }
             newTextFile(in: nil)
             return .consume
         }
@@ -325,7 +331,34 @@ enum FinderTools {
     }
 
     static func handleExtensionRequest(_ json: String) {
-        guard let request = try? JSONDecoder().decode(ExtensionRequest.self, from: Data(json.utf8)) else { return }
+        guard let request = try? JSONDecoder().decode(ExtensionRequest.self, from: Data(json.utf8)),
+              request.paths.count <= 10_000 else { return }
+        // Any local process can post this notification, including sandboxed apps. To never act for
+        // them (reading or changing files they can't reach), a request is only honored when it
+        // matches what the user has in front of them: Finder in front, the same selection, the same folder.
+        guard Apps.isFrontmost(Apps.finder) else { return }
+        DispatchQueue.global(qos: .userInitiated).async {
+            let selection = Set(selection().map(normalized))
+            let folder = currentFolder().map(normalized)
+            let paths = request.paths.map(normalized)
+            let pathsOK = paths.allSatisfy { selection.contains($0) }
+            let targetOK = request.target.map { t in
+                normalized(t) == folder || selection.contains(normalized(t))
+            } ?? true
+            guard pathsOK, targetOK else {
+                NSLog("Overdrive: ignored a Finder request that doesn't match the Finder selection")
+                return
+            }
+            DispatchQueue.main.async { MainActor.assumeIsolated { perform(request) } }
+        }
+    }
+
+    /// Same path whatever the trailing slash or symbolic links.
+    nonisolated static func normalized(_ path: String) -> String {
+        URL(fileURLWithPath: path).standardizedFileURL.resolvingSymlinksInPath().path
+    }
+
+    private static func perform(_ request: ExtensionRequest) {
         // Only existing absolute paths.
         let paths = request.paths.filter { $0.hasPrefix("/") && FileManager.default.fileExists(atPath: $0) }
         let target = request.target.flatMap { FileManager.default.fileExists(atPath: $0) ? $0 : nil }

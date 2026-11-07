@@ -154,6 +154,26 @@ enum ClipboardTools {
         feedback("clipboard", S.clipboardCleared)
     }
 
+    /// Pastes the clipboard's text without its formatting (fonts, colors, links), then restores it.
+    static func pastePlainText() {
+        let pasteboard = NSPasteboard.general
+        guard let text = pasteboard.string(forType: .string) else { return }
+        let saved = (pasteboard.pasteboardItems ?? []).map { item -> NSPasteboardItem in
+            let copy = NSPasteboardItem()
+            for type in item.types { if let data = item.data(forType: type) { copy.setData(data, forType: type) } }
+            return copy
+        }
+        pasteboard.clearContents()
+        pasteboard.setString(text, forType: .string)
+        EventTap.postKey(kVK_ANSI_V, flags: .maskCommand)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+            MainActor.assumeIsolated {
+                pasteboard.clearContents()
+                pasteboard.writeObjects(saved)
+            }
+        }
+    }
+
     private static var timer: Timer?
     private static var lastChange = NSPasteboard.general.changeCount
     private static var changedAt = Date()
@@ -418,6 +438,10 @@ enum ScreenshotTools {
     }
 
     static func setSetting(_ key: String, _ value: Bool) {
+        let current = Shell.defaultsRead("com.apple.screencapture", key)
+        let isTrue = current == "1"
+        // Already set (or default and asking for the default): don't restart SystemUIServer.
+        if (current != nil && isTrue == value) || (current == nil && value == (key == "show-thumbnail")) { return }
         Shell.defaultsWrite("com.apple.screencapture", key, "bool", value ? "true" : "false")
         Shell.restart("SystemUIServer")
     }

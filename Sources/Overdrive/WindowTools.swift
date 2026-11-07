@@ -166,6 +166,7 @@ enum DockTools {
     static var noDelay: Bool { Shell.defaultsRead("com.apple.dock", "autohide-delay") == "0" }
 
     static func setNoDelay(_ on: Bool) {
+        guard on != noDelay else { return } // nothing to change: don't restart the Dock
         if on {
             Shell.defaultsWrite("com.apple.dock", "autohide-delay", "float", "0")
             Shell.defaultsWrite("com.apple.dock", "autohide-time-modifier", "float", "0.35")
