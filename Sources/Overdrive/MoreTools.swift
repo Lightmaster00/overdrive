@@ -1,4 +1,5 @@
 import AppKit
+import AudioToolbox
 import Carbon
 import CoreAudio
 import IOKit.pwr_mgt

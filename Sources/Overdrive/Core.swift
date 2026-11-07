@@ -4,6 +4,10 @@ import Foundation
 
 // MARK: - Preferences
 
+enum PrefKey {
+    static let skippedVersion = "updates.skippedVersion"
+}
+
 enum Prefs {
     static let defaults = UserDefaults.standard
 
