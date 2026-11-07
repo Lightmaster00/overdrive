@@ -182,6 +182,10 @@ if ! sign_all "$SIGN_ID" 2>/dev/null; then
     sign_all "-"
     SIGN_ID="-"
 fi
+# The bundle must be complete and correctly signed (app and Finder extension), or nothing ships.
+test -x "$APPEX/Contents/MacOS/$EXT_NAME" || { echo "❌ Finder extension missing"; exit 1; }
+codesign --verify --strict --deep "$APP" || { echo "❌ Invalid signature"; exit 1; }
+codesign -d --entitlements - "$APPEX" 2>/dev/null | grep -q "app-sandbox" || { echo "❌ Finder extension is not sandboxed"; exit 1; }
 echo "✅ $APP ready (signed with: $SIGN_ID)"
 
 # 4. Launch / install / package
