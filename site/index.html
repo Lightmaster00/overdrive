@@ -11,9 +11,9 @@
 <meta property="og:image" content="icon.png">
 <style>
   :root {
-    --lagoon: #36C5F0; --violet: #FF6A1A; --rose: #FF2D55;
+    --lagoon: #FF5A8A; --violet: #FF6A3D; --rose: #FF9A1F;
     --night: #111216; --night-2: #1B1D23; --text: #F2F0FA; --text-2: #A8A4C0; --line: rgba(255,255,255,.08);
-    --grad: linear-gradient(120deg, var(--lagoon), #FFB020 45%, var(--violet) 70%, var(--rose));
+    --grad: linear-gradient(120deg, var(--lagoon), var(--violet) 55%, var(--rose));
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body {
@@ -32,7 +32,7 @@
 
   .hero { display: grid; grid-template-columns: 1.1fr .9fr; gap: 48px; align-items: center; padding: 56px 0 80px; }
   .eyebrow { display: inline-block; font-size: 12px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase;
-             color: var(--lagoon); background: rgba(54,197,240,.1); padding: 6px 12px; border-radius: 99px; margin-bottom: 22px; }
+             color: var(--lagoon); background: rgba(255,90,138,.12); padding: 6px 12px; border-radius: 99px; margin-bottom: 22px; }
   h1 { font: 800 clamp(40px, 6vw, 66px)/1.04 -apple-system, "SF Pro Display", sans-serif; letter-spacing: -.03em; margin-bottom: 22px; }
   h1 span { background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent; }
   .lead { font-size: 21px; color: var(--text-2); max-width: 30em; margin-bottom: 34px; }

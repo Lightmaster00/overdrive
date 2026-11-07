@@ -14,12 +14,28 @@ enum KeyboardTools {
     private static var hyperUsed = false
     private static var wakeObserver: NSObjectProtocol?
 
+    private static var mappingTimer: Timer?
+
     static func startHyper() {
-        applyCapsLockMapping(true)
+        // Caps Lock is only remapped once the event tap runs (Accessibility allowed):
+        // otherwise it would become a dead key.
+        mappingTimer?.invalidate()
+        mappingTimer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { timer in
+            MainActor.assumeIsolated {
+                guard EventTap.shared.isRunning else { return }
+                timer.invalidate()
+                mappingTimer = nil
+                applyCapsLockMapping(true)
+            }
+        }
         // Mappings are lost after sleep on some keyboards: apply again on wake.
         wakeObserver = NSWorkspace.shared.notificationCenter.addObserver(
             forName: NSWorkspace.didWakeNotification, object: nil, queue: .main
-        ) { _ in applyCapsLockMapping(true) }
+        ) { _ in
+            MainActor.assumeIsolated {
+                if EventTap.shared.isRunning { applyCapsLockMapping(true) }
+            }
+        }
         EventTap.shared.add("keyboard.hyper") { type, event in
             if event.keyCode == kVK_F18, type == .keyDown || type == .keyUp {
                 if type == .keyDown {
@@ -44,6 +60,8 @@ enum KeyboardTools {
     }
 
     static func stopHyper() {
+        mappingTimer?.invalidate()
+        mappingTimer = nil
         EventTap.shared.remove("keyboard.hyper")
         if let wakeObserver { NSWorkspace.shared.notificationCenter.removeObserver(wakeObserver) }
         wakeObserver = nil

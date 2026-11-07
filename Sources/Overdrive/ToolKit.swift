@@ -128,6 +128,7 @@ final class ToolManager: ObservableObject {
     func isOn(_ tool: Tool) -> Bool { Prefs.isOn(tool.id, default: tool.defaultOn) }
 
     func setOn(_ tool: Tool, _ on: Bool) {
+        if on, tool.kind == .tweak { requestMissingPermissions(tool) }
         Prefs.setOn(tool.id, on)
         if tool.kind == .tweak {
             on ? startTweak(tool) : stopTweak(tool)
@@ -157,6 +158,8 @@ final class ToolManager: ObservableObject {
     func run(_ tool: Tool) {
         switch tool.kind {
         case .action:
+            // Without its permission an action would silently do nothing: ask for it instead.
+            if requestMissingPermissions(tool) { return }
             tool.perform?()
         case .tweak:
             let on = !isOn(tool)
@@ -167,6 +170,15 @@ final class ToolManager: ObservableObject {
     }
 
     func changed() { revision &+= 1 }
+
+    /// Asks for the first missing permission. Returns true if one was missing.
+    @discardableResult
+    func requestMissingPermissions(_ tool: Tool) -> Bool {
+        guard let missing = tool.permissions.first(where: { $0.isGranted == false }) else { return false }
+        feedback("lock.shield", S.needsPermission(missing.title))
+        missing.request()
+        return true
+    }
 
     private func startTweak(_ tool: Tool) {
         guard !running.contains(tool.id) else { return }
