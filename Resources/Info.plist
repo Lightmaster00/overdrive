@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleAllowMixedLocalizations</key>
+	<true/>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>en</string>
+	<key>CFBundleDisplayName</key>
+	<string>Overdrive</string>
+	<key>CFBundleExecutable</key>
+	<string>Overdrive</string>
+	<key>CFBundleIconFile</key>
+	<string>AppIcon</string>
+	<key>CFBundleIdentifier</key>
+	<string>com.lightmaster.overdrive</string>
+	<key>CFBundleLocalizations</key>
+	<array>
+		<string>en</string>
+		<string>fr</string>
+		<string>es</string>
+		<string>de</string>
+		<string>ja</string>
+	</array>
+	<key>CFBundleName</key>
+	<string>Overdrive</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleShortVersionString</key>
+	<string>1.0.0</string>
+	<key>CFBundleVersion</key>
+	<string>1</string>
+	<key>LSApplicationCategoryType</key>
+	<string>public.app-category.utilities</string>
+	<key>LSMinimumSystemVersion</key>
+	<string>14.0</string>
+	<key>LSUIElement</key>
+	<true/>
+	<key>NSHighResolutionCapable</key>
+	<true/>
+	<key>NSHumanReadableCopyright</key>
+	<string>© 2026 Overdrive</string>
+	<key>NSAppleEventsUsageDescription</key>
+	<string>Overdrive asks Finder for the selected files and the open folder (cut and paste, new text file, open in Terminal), and System Events to switch Dark Mode.</string>
+	<key>NSDownloadsFolderUsageDescription</key>
+	<string>Overdrive tidies the Downloads folder only if you turn on those tools (archive old downloads, lowercase extensions, AirDrop folder).</string>
+	<key>NSDesktopFolderUsageDescription</key>
+	<string>Overdrive finds your latest screenshots on the Desktop (open, copy or archive them) only if you turn on those tools.</string>
+</dict>
+</plist>
