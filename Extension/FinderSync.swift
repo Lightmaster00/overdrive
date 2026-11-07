@@ -78,7 +78,7 @@ final class ODFinderSync: FIFinderSync {
             guard !items.isEmpty else { continue }
             if !submenu.items.isEmpty { submenu.addItem(.separator()) }
             for item in items {
-                let entry = NSMenuItem(title: item.title, action: #selector(perform(_:)), keyEquivalent: "")
+                let entry = NSMenuItem(title: item.title, action: #selector(runItem(_:)), keyEquivalent: "")
                 entry.tag = item.rawValue
                 entry.target = self
                 entry.image = NSImage(systemSymbolName: item.symbol, accessibilityDescription: nil)
@@ -93,7 +93,7 @@ final class ODFinderSync: FIFinderSync {
         return menu
     }
 
-    @objc private func perform(_ sender: NSMenuItem) {
+    @objc private func runItem(_ sender: NSMenuItem) {
         guard let item = Item(rawValue: sender.tag) else { return }
         let controller = FIFinderSyncController.default()
         let selected = controller.selectedItemURLs() ?? []
