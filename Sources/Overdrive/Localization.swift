@@ -54,6 +54,16 @@ enum S {
     static var cancel: String { tr("Cancel", "Annuler", "Cancelar", "Abbrechen", "キャンセル") }
     static var delete: String { tr("Delete", "Supprimer", "Eliminar", "Löschen", "削除") }
     static var quit: String { tr("Quit Overdrive", "Quitter Overdrive", "Salir de Overdrive", "Overdrive beenden", "Overdrive を終了") }
+    static var actionsHeader: String { tr("Actions", "Actions", "Acciones", "Aktionen", "アクション") }
+    static var tweaksMenu: String { tr("Enhancements", "Améliorations", "Mejoras", "Verbesserungen", "機能拡張") }
+    static var menuEmpty: String { tr("Choose tools to show here…", "Choisir les outils à afficher ici…", "Elegir herramientas para mostrar aquí…", "Werkzeuge für dieses Menü wählen …", "ここに表示するツールを選ぶ…") }
+    static func activeTweaks(_ n: Int) -> String {
+        switch n {
+        case 0: return tr("No enhancement on", "Aucune amélioration active", "Ninguna mejora activa", "Keine Verbesserung aktiv", "有効な機能拡張なし")
+        case 1: return tr("1 enhancement on", "1 amélioration active", "1 mejora activa", "1 Verbesserung aktiv", "1 件の機能拡張が有効")
+        default: return tr("\(n) enhancements on", "\(n) améliorations actives", "\(n) mejoras activas", "\(n) Verbesserungen aktiv", "\(n) 件の機能拡張が有効")
+        }
+    }
     static var settingsMenu: String { tr("Settings…", "Réglages…", "Ajustes…", "Einstellungen …", "設定…") }
     static var general: String { tr("General", "Général", "General", "Allgemein", "一般") }
     static var tools: String { tr("Tools", "Outils", "Herramientas", "Werkzeuge", "ツール") }
