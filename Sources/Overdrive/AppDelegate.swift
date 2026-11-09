@@ -63,7 +63,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         menu.addItem(hosted(MenuHeader(activeTweaks: tweaks.filter { manager.isOn($0) }.count)))
 
         if !toggles.isEmpty {
-            menu.addItem(hosted(QuickTiles(tools: toggles.map(\.id))))
+            // States are read here, before SwiftUI lays anything out: some of them run a command
+            // and wait for it, which must never happen inside a SwiftUI update.
+            menu.addItem(hosted(QuickTiles(initial: QuickTiles.read(toggles.map(\.id)))))
         }
 
         if !actions.isEmpty {
@@ -211,27 +213,53 @@ private struct MenuHeader: View {
 
 /// On/off controls as round tiles: the state shows at a glance, and the menu stays open.
 private struct QuickTiles: View {
-    let tools: [String]
-    @State private var revision = 0
+    struct Entry: Identifiable, Equatable {
+        let id: String
+        var on: Bool
+    }
+
+    @State private var entries: [Entry]
+
+    init(initial: [Entry]) {
+        _entries = State(initialValue: initial)
+    }
+
+    /// Reads the current states. Call outside SwiftUI updates only.
+    @MainActor static func read(_ ids: [String]) -> [Entry] {
+        ids.compactMap { id in
+            guard let tool = ToolManager.shared.tool(id) else { return nil }
+            return Entry(id: id, on: tool.state?() ?? false)
+        }
+    }
 
     var body: some View {
-        let manager = ToolManager.shared
         LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 4), count: 4), spacing: 10) {
-            ForEach(tools, id: \.self) { id in
-                if let tool = manager.tool(id) {
-                    QuickTile(tool: tool, on: tool.state?() ?? false) {
-                        manager.run(tool)
-                        // Some states change a moment later (Finder, Dock…): read them again.
-                        revision += 1
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) { revision += 1 }
-                    }
-                    .id("\(id)-\(revision)")
+            ForEach(entries) { entry in
+                if let tool = ToolManager.shared.tool(entry.id) {
+                    QuickTile(tool: tool, on: entry.on) { toggle(entry.id) }
                 }
             }
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 8)
         .frame(width: menuWidth)
+    }
+
+    private func toggle(_ id: String) {
+        guard let tool = ToolManager.shared.tool(id), let index = entries.firstIndex(where: { $0.id == id }) else { return }
+        // Show the new state at once, run the tool after this update, then read the real states
+        // again (some change a moment later: Finder, Dock…).
+        entries[index].on.toggle()
+        let ids = entries.map(\.id)
+        DispatchQueue.main.async {
+            MainActor.assumeIsolated {
+                ToolManager.shared.run(tool)
+                entries = Self.read(ids)
+            }
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
+            MainActor.assumeIsolated { entries = Self.read(ids) }
+        }
     }
 }
 
